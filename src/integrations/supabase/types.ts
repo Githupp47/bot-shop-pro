@@ -47,6 +47,7 @@ export type Database = {
           created_at: string
           customer_avatar: string | null
           customer_name: string
+          external_id: string | null
           id: string
           last_message: string | null
           last_message_at: string
@@ -60,6 +61,7 @@ export type Database = {
           created_at?: string
           customer_avatar?: string | null
           customer_name: string
+          external_id?: string | null
           id?: string
           last_message?: string | null
           last_message_at?: string
@@ -73,6 +75,7 @@ export type Database = {
           created_at?: string
           customer_avatar?: string | null
           customer_name?: string
+          external_id?: string | null
           id?: string
           last_message?: string | null
           last_message_at?: string
