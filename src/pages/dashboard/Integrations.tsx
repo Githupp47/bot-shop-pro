@@ -6,7 +6,9 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Code2, Copy, ExternalLink } from "lucide-react";
+import { Check, Code2, Copy, ExternalLink, Settings } from "lucide-react";
+import { ChannelSetupDialog } from "@/components/ChannelSetupDialog";
+import { Link } from "react-router-dom";
 
 const PROVIDERS = [
   { key: "shopify", name: "Shopify", color: "from-emerald-500/20" },
@@ -23,6 +25,9 @@ export default function Integrations() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [list, setList] = useState<any[]>([]);
+  const [setupProvider, setSetupProvider] = useState<"line_oa" | "messenger" | "instagram" | null>(null);
+
+  const SETUP_KEYS = new Set(["line_oa", "messenger", "instagram"]);
 
   const load = async () => {
     if (!user) return;
@@ -75,9 +80,26 @@ export default function Integrations() {
                   </div>
                   {connected && <Badge variant="outline" className="border-success/40 text-success"><Check className="h-3 w-3 mr-1" />{t("dash.connected")}</Badge>}
                 </div>
-                <Button onClick={() => toggle(p.key, connected)} variant={connected ? "outline" : "default"} className={`w-full ${!connected ? "bg-gradient-primary" : ""}`}>
-                  {connected ? t("dash.disconnect") : t("dash.connect")}
-                </Button>
+                {p.key === "shopify" ? (
+                  <Link to="/dashboard/shopify">
+                    <Button variant={connected ? "outline" : "default"} className={`w-full ${!connected ? "bg-gradient-primary" : ""}`}>
+                      จัดการสินค้า →
+                    </Button>
+                  </Link>
+                ) : SETUP_KEYS.has(p.key) ? (
+                  <div className="flex gap-2">
+                    <Button onClick={() => setSetupProvider(p.key as any)} variant={connected ? "outline" : "default"} className={`flex-1 ${!connected ? "bg-gradient-primary" : ""}`}>
+                      <Settings className="h-4 w-4" /> {connected ? "แก้ไข" : "ตั้งค่า"}
+                    </Button>
+                    {connected && (
+                      <Button onClick={() => toggle(p.key, true)} variant="ghost" size="sm">×</Button>
+                    )}
+                  </div>
+                ) : (
+                  <Button onClick={() => toggle(p.key, connected)} variant={connected ? "outline" : "default"} className={`w-full ${!connected ? "bg-gradient-primary" : ""}`}>
+                    {connected ? t("dash.disconnect") : t("dash.connect")}
+                  </Button>
+                )}
               </div>
             </Card>
           );
@@ -116,6 +138,13 @@ export default function Integrations() {
           <div><span className="text-foreground font-semibold">3.</span> AI ตอบทันที 24/7</div>
         </div>
       </Card>
+
+      <ChannelSetupDialog
+        open={!!setupProvider}
+        onOpenChange={(v) => !v && setSetupProvider(null)}
+        provider={setupProvider}
+        onSaved={load}
+      />
     </div>
   );
 }
