@@ -5,7 +5,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard, Plug, ToggleRight, GraduationCap, MessagesSquare,
-  BarChart3, CreditCard, Shield, LogOut, Sparkles, Rocket
+  BarChart3, CreditCard, Shield, LogOut, Sparkles, Rocket, ShoppingBag
 } from "lucide-react";
 
 export default function DashboardLayout() {
@@ -17,6 +17,7 @@ export default function DashboardLayout() {
     { to: "/dashboard", icon: LayoutDashboard, label: t("dash.overview"), end: true },
     { to: "/dashboard/getting-started", icon: Rocket, label: "Getting Started" },
     { to: "/dashboard/integrations", icon: Plug, label: t("dash.integrations") },
+    { to: "/dashboard/shopify", icon: ShoppingBag, label: "Shopify" },
     { to: "/dashboard/features", icon: ToggleRight, label: t("dash.features") },
     { to: "/dashboard/training", icon: GraduationCap, label: t("dash.training") },
     { to: "/dashboard/livechat", icon: MessagesSquare, label: t("dash.livechat") },
