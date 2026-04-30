@@ -34,7 +34,7 @@ export default function Integrations() {
   const toggle = async (key: string, currentlyConnected: boolean) => {
     if (!user) return;
     if (currentlyConnected) {
-      await supabase.from("integrations").update({ status: "disconnected", connected_at: null }).eq("user_id", user.id).eq("provider", key);
+      await supabase.from("integrations").update({ status: "disconnected", connected_at: null }).eq("user_id", user.id).eq("provider", key as any);
       toast.success("Disconnected");
     } else {
       await supabase.from("integrations").upsert({ user_id: user.id, provider: key as any, status: "connected", store_name: `${key}-store`, connected_at: new Date().toISOString() }, { onConflict: "user_id,provider" });
