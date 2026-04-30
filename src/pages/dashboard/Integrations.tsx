@@ -6,7 +6,9 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Code2, Copy, ExternalLink } from "lucide-react";
+import { Check, Code2, Copy, ExternalLink, Settings } from "lucide-react";
+import { ChannelSetupDialog } from "@/components/ChannelSetupDialog";
+import { Link } from "react-router-dom";
 
 const PROVIDERS = [
   { key: "shopify", name: "Shopify", color: "from-emerald-500/20" },
@@ -23,6 +25,9 @@ export default function Integrations() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const [list, setList] = useState<any[]>([]);
+  const [setupProvider, setSetupProvider] = useState<"line_oa" | "messenger" | "instagram" | null>(null);
+
+  const SETUP_KEYS = new Set(["line_oa", "messenger", "instagram"]);
 
   const load = async () => {
     if (!user) return;
