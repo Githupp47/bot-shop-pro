@@ -14,16 +14,430 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bot_features: {
+        Row: {
+          config: Json
+          enabled: boolean
+          feature_key: Database["public"]["Enums"]["bot_feature_key"]
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          config?: Json
+          enabled?: boolean
+          feature_key: Database["public"]["Enums"]["bot_feature_key"]
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          config?: Json
+          enabled?: boolean
+          feature_key?: Database["public"]["Enums"]["bot_feature_key"]
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      conversations: {
+        Row: {
+          channel: Database["public"]["Enums"]["integration_provider"]
+          created_at: string
+          customer_avatar: string | null
+          customer_name: string
+          id: string
+          last_message: string | null
+          last_message_at: string
+          lead_tag: Database["public"]["Enums"]["lead_tag"] | null
+          status: Database["public"]["Enums"]["conversation_status"]
+          unread_count: number
+          user_id: string
+        }
+        Insert: {
+          channel: Database["public"]["Enums"]["integration_provider"]
+          created_at?: string
+          customer_avatar?: string | null
+          customer_name: string
+          id?: string
+          last_message?: string | null
+          last_message_at?: string
+          lead_tag?: Database["public"]["Enums"]["lead_tag"] | null
+          status?: Database["public"]["Enums"]["conversation_status"]
+          unread_count?: number
+          user_id: string
+        }
+        Update: {
+          channel?: Database["public"]["Enums"]["integration_provider"]
+          created_at?: string
+          customer_avatar?: string | null
+          customer_name?: string
+          id?: string
+          last_message?: string | null
+          last_message_at?: string
+          lead_tag?: Database["public"]["Enums"]["lead_tag"] | null
+          status?: Database["public"]["Enums"]["conversation_status"]
+          unread_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      daily_metrics: {
+        Row: {
+          ai_revenue: number
+          avg_response_seconds: number
+          chats_count: number
+          conversion_rate: number
+          created_at: string
+          csat: number
+          id: string
+          metric_date: string
+          new_customers: number
+          orders_count: number
+          returning_customers: number
+          revenue: number
+          user_id: string
+        }
+        Insert: {
+          ai_revenue?: number
+          avg_response_seconds?: number
+          chats_count?: number
+          conversion_rate?: number
+          created_at?: string
+          csat?: number
+          id?: string
+          metric_date: string
+          new_customers?: number
+          orders_count?: number
+          returning_customers?: number
+          revenue?: number
+          user_id: string
+        }
+        Update: {
+          ai_revenue?: number
+          avg_response_seconds?: number
+          chats_count?: number
+          conversion_rate?: number
+          created_at?: string
+          csat?: number
+          id?: string
+          metric_date?: string
+          new_customers?: number
+          orders_count?: number
+          returning_customers?: number
+          revenue?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      integrations: {
+        Row: {
+          config: Json
+          connected_at: string | null
+          created_at: string
+          id: string
+          provider: Database["public"]["Enums"]["integration_provider"]
+          status: Database["public"]["Enums"]["integration_status"]
+          store_name: string | null
+          user_id: string
+        }
+        Insert: {
+          config?: Json
+          connected_at?: string | null
+          created_at?: string
+          id?: string
+          provider: Database["public"]["Enums"]["integration_provider"]
+          status?: Database["public"]["Enums"]["integration_status"]
+          store_name?: string | null
+          user_id: string
+        }
+        Update: {
+          config?: Json
+          connected_at?: string | null
+          created_at?: string
+          id?: string
+          provider?: Database["public"]["Enums"]["integration_provider"]
+          status?: Database["public"]["Enums"]["integration_status"]
+          store_name?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      invoices: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          invoice_number: string
+          pdf_url: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          invoice_number: string
+          pdf_url?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_number?: string
+          pdf_url?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          sender: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          sender: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          sender?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          amount: number
+          channel: Database["public"]["Enums"]["integration_provider"] | null
+          closed_by_ai: boolean
+          created_at: string
+          customer_name: string
+          id: string
+          order_number: string
+          product_name: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          channel?: Database["public"]["Enums"]["integration_provider"] | null
+          closed_by_ai?: boolean
+          created_at?: string
+          customer_name: string
+          id?: string
+          order_number: string
+          product_name: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          channel?: Database["public"]["Enums"]["integration_provider"] | null
+          closed_by_ai?: boolean
+          created_at?: string
+          customer_name?: string
+          id?: string
+          order_number?: string
+          product_name?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          company_name: string | null
+          created_at: string
+          email: string
+          full_name: string | null
+          id: string
+          locale: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          company_name?: string | null
+          created_at?: string
+          email: string
+          full_name?: string | null
+          id: string
+          locale?: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          company_name?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string | null
+          id?: string
+          locale?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          amount: number
+          created_at: string
+          current_period_end: string
+          current_period_start: string
+          id: string
+          plan: Database["public"]["Enums"]["subscription_plan"]
+          status: Database["public"]["Enums"]["subscription_status"]
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          status?: Database["public"]["Enums"]["subscription_status"]
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          plan?: Database["public"]["Enums"]["subscription_plan"]
+          status?: Database["public"]["Enums"]["subscription_status"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      training_documents: {
+        Row: {
+          content: string | null
+          created_at: string
+          doc_type: string
+          id: string
+          status: string
+          title: string
+          url: string | null
+          user_id: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          doc_type: string
+          id?: string
+          status?: string
+          title: string
+          url?: string | null
+          user_id: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          doc_type?: string
+          id?: string
+          status?: string
+          title?: string
+          url?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "customer"
+      bot_feature_key:
+        | "sales_search"
+        | "sales_recommend"
+        | "sales_crosssell"
+        | "sales_bundle"
+        | "sales_dynamic_pricing"
+        | "cs_chat_24_7"
+        | "cs_order_check"
+        | "cs_tracking"
+        | "cs_faq"
+        | "cs_multilang"
+        | "ops_stock"
+        | "ops_process_order"
+        | "ops_warranty"
+        | "ops_reorder"
+        | "ops_fraud"
+        | "mkt_segment"
+        | "mkt_promo"
+        | "mkt_cart_recovery"
+        | "mkt_churn"
+        | "mkt_ads_audience"
+      conversation_status: "active" | "resolved" | "human_takeover"
+      integration_provider:
+        | "shopify"
+        | "woocommerce"
+        | "lazada"
+        | "shopee"
+        | "line_oa"
+        | "messenger"
+        | "instagram"
+        | "web_widget"
+      integration_status: "connected" | "disconnected" | "error"
+      lead_tag: "hot" | "warm" | "cold"
+      subscription_plan: "free" | "starter" | "growth" | "enterprise"
+      subscription_status: "active" | "past_due" | "canceled" | "trialing"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +564,45 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "customer"],
+      bot_feature_key: [
+        "sales_search",
+        "sales_recommend",
+        "sales_crosssell",
+        "sales_bundle",
+        "sales_dynamic_pricing",
+        "cs_chat_24_7",
+        "cs_order_check",
+        "cs_tracking",
+        "cs_faq",
+        "cs_multilang",
+        "ops_stock",
+        "ops_process_order",
+        "ops_warranty",
+        "ops_reorder",
+        "ops_fraud",
+        "mkt_segment",
+        "mkt_promo",
+        "mkt_cart_recovery",
+        "mkt_churn",
+        "mkt_ads_audience",
+      ],
+      conversation_status: ["active", "resolved", "human_takeover"],
+      integration_provider: [
+        "shopify",
+        "woocommerce",
+        "lazada",
+        "shopee",
+        "line_oa",
+        "messenger",
+        "instagram",
+        "web_widget",
+      ],
+      integration_status: ["connected", "disconnected", "error"],
+      lead_tag: ["hot", "warm", "cold"],
+      subscription_plan: ["free", "starter", "growth", "enterprise"],
+      subscription_status: ["active", "past_due", "canceled", "trialing"],
+    },
   },
 } as const
