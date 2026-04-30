@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check } from "lucide-react";
+import { Check, Code2, Copy, ExternalLink } from "lucide-react";
 
 const PROVIDERS = [
   { key: "shopify", name: "Shopify", color: "from-emerald-500/20" },
@@ -43,6 +43,17 @@ export default function Integrations() {
     load();
   };
 
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const embedSnippet = user
+    ? `<script src="${origin}/widget.js" data-bot="${user.id}" defer></script>`
+    : "";
+  const widgetUrl = user ? `${origin}/widget/${user.id}` : "";
+
+  const copy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copied!");
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -72,6 +83,39 @@ export default function Integrations() {
           );
         })}
       </div>
+
+      {/* Web widget embed */}
+      <Card id="widget" className="p-6 bg-gradient-card border-border/50">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-10 w-10 rounded-lg bg-gradient-primary grid place-items-center shadow-glow">
+            <Code2 className="h-5 w-5 text-primary-foreground" />
+          </div>
+          <div>
+            <div className="font-display font-semibold text-lg">Web Chat Widget</div>
+            <div className="text-xs text-muted-foreground">วาง snippet นี้ก่อนปิด &lt;/body&gt; บนเว็บไซต์ของคุณ</div>
+          </div>
+        </div>
+
+        <div className="bg-background/60 border border-border/50 rounded-lg p-4 font-mono text-xs overflow-x-auto">
+          {embedSnippet || "loading..."}
+        </div>
+        <div className="flex gap-2 mt-3 flex-wrap">
+          <Button size="sm" onClick={() => copy(embedSnippet)} disabled={!embedSnippet}>
+            <Copy className="h-4 w-4" /> Copy snippet
+          </Button>
+          <a href={widgetUrl} target="_blank" rel="noreferrer">
+            <Button size="sm" variant="outline" disabled={!widgetUrl}>
+              <ExternalLink className="h-4 w-4" /> Preview widget
+            </Button>
+          </a>
+        </div>
+
+        <div className="mt-4 grid sm:grid-cols-3 gap-3 text-sm text-muted-foreground">
+          <div><span className="text-foreground font-semibold">1.</span> ลูกค้าเข้าเว็บคุณ</div>
+          <div><span className="text-foreground font-semibold">2.</span> เห็นปุ่มแชทมุมขวาล่าง</div>
+          <div><span className="text-foreground font-semibold">3.</span> AI ตอบทันที 24/7</div>
+        </div>
+      </Card>
     </div>
   );
 }
