@@ -20,6 +20,7 @@ import Analytics from "./pages/dashboard/Analytics";
 import Billing from "./pages/dashboard/Billing";
 import Admin from "./pages/dashboard/Admin";
 import GettingStarted from "./pages/dashboard/GettingStarted";
+import ShopifyProducts from "./pages/dashboard/ShopifyProducts";
 import ChatWidget from "./pages/ChatWidget";
 import Docs from "./pages/Docs";
 import NotFound from "./pages/NotFound";
