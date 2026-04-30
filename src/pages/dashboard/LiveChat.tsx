@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Bot, User, Send, Flame } from "lucide-react";
+import { Bot, User, Send, Flame, Sparkles, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function LiveChat() {
   const { t } = useTranslation();
@@ -15,6 +16,7 @@ export default function LiveChat() {
   const [active, setActive] = useState<any>(null);
   const [msgs, setMsgs] = useState<any[]>([]);
   const [draft, setDraft] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -34,7 +36,30 @@ export default function LiveChat() {
   const send = async () => {
     if (!user || !active || !draft.trim()) return;
     await supabase.from("messages").insert({ conversation_id: active.id, user_id: user.id, sender: "human", content: draft });
+    await supabase.from("conversations").update({ last_message: draft, last_message_at: new Date().toISOString() }).eq("id", active.id);
     setDraft("");
+  };
+
+  const askAI = async () => {
+    if (!user || !active) return;
+    const lastCustomer = [...msgs].reverse().find((m) => m.sender === "customer");
+    if (!lastCustomer) {
+      toast.error("ไม่พบข้อความจากลูกค้า");
+      return;
+    }
+    setAiLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("chat-ai", {
+        body: { conversationId: active.id, message: lastCustomer.content, channel: active.channel },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success("AI ตอบแล้ว");
+    } catch (e: any) {
+      toast.error(e.message || "AI ตอบไม่ได้");
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   return (
@@ -63,7 +88,12 @@ export default function LiveChat() {
                   <div className="font-semibold">{active.customer_name}</div>
                   <div className="text-xs text-muted-foreground uppercase">{active.channel}</div>
                 </div>
-                <Button size="sm" variant="outline">{t("dash.takeover")}</Button>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={askAI} disabled={aiLoading}>
+                    {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Ask AI
+                  </Button>
+                  <Button size="sm" variant="outline">{t("dash.takeover")}</Button>
+                </div>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {msgs.map((m) => {

@@ -19,6 +19,9 @@ import LiveChat from "./pages/dashboard/LiveChat";
 import Analytics from "./pages/dashboard/Analytics";
 import Billing from "./pages/dashboard/Billing";
 import Admin from "./pages/dashboard/Admin";
+import GettingStarted from "./pages/dashboard/GettingStarted";
+import ChatWidget from "./pages/ChatWidget";
+import Docs from "./pages/Docs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,12 +35,15 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/" element={<Landing />} />
+            <Route path="/docs" element={<Docs />} />
+            <Route path="/widget/:userId" element={<ChatWidget />} />
             <Route path="/auth/login" element={<Login />} />
             <Route path="/auth/signup" element={<Signup />} />
             <Route path="/auth/forgot" element={<ForgotPassword />} />
             <Route path="/auth/reset" element={<ResetPassword />} />
             <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
               <Route index element={<Overview />} />
+              <Route path="getting-started" element={<GettingStarted />} />
               <Route path="integrations" element={<Integrations />} />
               <Route path="features" element={<BotFeatures />} />
               <Route path="training" element={<Training />} />
