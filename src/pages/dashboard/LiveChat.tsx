@@ -64,9 +64,16 @@ export default function LiveChat() {
 
   return (
     <div className="animate-fade-in">
-      <div className="mb-6"><h1 className="font-display text-3xl font-bold">{t("dash.livechat")}</h1></div>
-      <div className="grid grid-cols-12 gap-4 h-[calc(100vh-220px)]">
-        <Card className="col-span-4 bg-gradient-card border-border/50 overflow-y-auto">
+      <div className="mb-4 flex items-center gap-3">
+        <h1 className="font-display text-2xl md:text-3xl font-bold">{t("dash.livechat")}</h1>
+        {active && (
+          <Button size="sm" variant="ghost" className="md:hidden ml-auto" onClick={() => setActive(null)}>
+            ← Back
+          </Button>
+        )}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-[calc(100vh-180px)]">
+        <Card className={`md:col-span-4 bg-gradient-card border-border/50 overflow-y-auto ${active ? "hidden md:block" : "block"}`}>
           {convs.map((c) => (
             <button key={c.id} onClick={() => setActive(c)} className={`w-full text-left p-4 border-b border-border/40 transition hover:bg-card/50 ${active?.id === c.id ? "bg-card/70" : ""}`}>
               <div className="flex items-center justify-between mb-1">
