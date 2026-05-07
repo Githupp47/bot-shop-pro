@@ -87,7 +87,7 @@ export default function LiveChat() {
           ))}
         </Card>
 
-        <Card className="col-span-8 bg-gradient-card border-border/50 flex flex-col">
+        <Card className={`md:col-span-8 bg-gradient-card border-border/50 flex flex-col ${active ? "flex" : "hidden md:flex"}`}>
           {active ? (
             <>
               <div className="p-4 border-b border-border/40 flex items-center justify-between">
