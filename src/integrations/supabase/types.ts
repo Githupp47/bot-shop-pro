@@ -404,6 +404,7 @@ export type Database = {
         Returns: boolean
       }
       seed_demo_data: { Args: never; Returns: undefined }
+      seed_demo_data_for: { Args: { uid: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "customer"
