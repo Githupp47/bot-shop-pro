@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Bot, User, Send, Flame, Sparkles, Loader2 } from "lucide-react";
+import { Bot, User, Send, Flame, Sparkles, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function LiveChat() {
@@ -60,6 +60,15 @@ export default function LiveChat() {
     } finally {
       setAiLoading(false);
     }
+  };
+
+  const removeConv = async (id: string) => {
+    if (!confirm("ลบบทสนทนานี้?")) return;
+    await supabase.from("messages").delete().eq("conversation_id", id);
+    await supabase.from("conversations").delete().eq("id", id);
+    setConvs((cs) => cs.filter((c) => c.id !== id));
+    if (active?.id === id) setActive(null);
+    toast.success("ลบแล้ว");
   };
 
   return (
