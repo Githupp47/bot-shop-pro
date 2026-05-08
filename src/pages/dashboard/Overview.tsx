@@ -34,7 +34,8 @@ export default function Overview() {
   useEffect(() => { load(); }, [user]);
 
   const seed = async () => {
-    const { error } = await supabase.rpc("seed_demo_data");
+    if (!user) return;
+    const { error } = await supabase.rpc("seed_demo_data_for", { uid: user.id });
     if (error) return toast.error(error.message);
     toast.success(t("dash.seeded"));
     load();
