@@ -84,15 +84,24 @@ export default function LiveChat() {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 h-[calc(100vh-180px)]">
         <Card className={`md:col-span-4 bg-gradient-card border-border/50 overflow-y-auto ${active ? "hidden md:block" : "block"}`}>
           {convs.map((c) => (
-            <button key={c.id} onClick={() => setActive(c)} className={`w-full text-left p-4 border-b border-border/40 transition hover:bg-card/50 ${active?.id === c.id ? "bg-card/70" : ""}`}>
-              <div className="flex items-center justify-between mb-1">
-                <div className="font-semibold text-sm">{c.customer_name}</div>
-                {c.lead_tag === "hot" && <Badge variant="outline" className="border-destructive/40 text-destructive"><Flame className="h-3 w-3 mr-1" />Hot</Badge>}
-                {c.lead_tag === "warm" && <Badge variant="outline" className="border-warning/40 text-warning">Warm</Badge>}
-              </div>
-              <div className="text-xs text-muted-foreground truncate">{c.last_message}</div>
-              <div className="text-[10px] text-muted-foreground mt-1 uppercase">{c.channel} · {c.status}</div>
-            </button>
+            <div key={c.id} className={`group relative w-full border-b border-border/40 transition hover:bg-card/50 ${active?.id === c.id ? "bg-card/70" : ""}`}>
+              <button onClick={() => setActive(c)} className="w-full text-left p-4 pr-10">
+                <div className="flex items-center justify-between mb-1">
+                  <div className="font-semibold text-sm">{c.customer_name}</div>
+                  {c.lead_tag === "hot" && <Badge variant="outline" className="border-destructive/40 text-destructive"><Flame className="h-3 w-3 mr-1" />Hot</Badge>}
+                  {c.lead_tag === "warm" && <Badge variant="outline" className="border-warning/40 text-warning">Warm</Badge>}
+                </div>
+                <div className="text-xs text-muted-foreground truncate">{c.last_message}</div>
+                <div className="text-[10px] text-muted-foreground mt-1 uppercase">{c.channel} · {c.status}</div>
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); removeConv(c.id); }}
+                className="absolute top-3 right-2 p-1.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition"
+                aria-label="ลบบทสนทนา"
+              >
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
           ))}
         </Card>
 
