@@ -13,8 +13,6 @@ import { Link } from "react-router-dom";
 const PROVIDERS = [
   { key: "shopify", name: "Shopify", color: "from-emerald-500/20" },
   { key: "woocommerce", name: "WooCommerce", color: "from-purple-500/20" },
-  { key: "lazada", name: "Lazada", color: "from-orange-500/20" },
-  { key: "shopee", name: "Shopee", color: "from-red-500/20" },
   { key: "line_oa", name: "LINE OA", color: "from-green-500/20" },
   { key: "messenger", name: "Facebook Messenger", color: "from-blue-500/20" },
   { key: "instagram", name: "Instagram DM", color: "from-pink-500/20" },
