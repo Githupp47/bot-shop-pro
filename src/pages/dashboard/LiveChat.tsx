@@ -118,6 +118,9 @@ export default function LiveChat() {
                     {aiLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />} Ask AI
                   </Button>
                   <Button size="sm" variant="outline">{t("dash.takeover")}</Button>
+                  <Button size="sm" variant="ghost" onClick={() => removeConv(active.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
