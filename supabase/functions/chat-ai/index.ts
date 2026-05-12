@@ -60,9 +60,12 @@ Deno.serve(async (req) => {
     // Pull profile/company name
     const { data: profile } = await admin.from("profiles").select("full_name, company_name").eq("id", ownerId).maybeSingle();
 
-    // Build conversation history
+    // Build conversation history + resolve customer name from conversation
     let history: { role: string; content: string }[] = [];
+    let resolvedCustomerName = body.customerName;
     if (conversationId) {
+      const { data: conv } = await admin.from("conversations").select("customer_name").eq("id", conversationId).maybeSingle();
+      if (conv?.customer_name && !resolvedCustomerName) resolvedCustomerName = conv.customer_name;
       const { data: prev } = await admin
         .from("messages")
         .select("sender, content")
@@ -80,18 +83,66 @@ Deno.serve(async (req) => {
     const trainingContext = (docs || [])
       .map((d: any) => `### ${d.title} (${d.doc_type})\n${d.content || "(no inline content)"}`)
       .join("\n\n")
-      .slice(0, 8000);
+      .slice(0, 6000);
+
+    // Pull live Shopify catalog (best-effort)
+    let catalogContext = "";
+    try {
+      const SHOP = "ai-commerce-partner-4o3co.myshopify.com";
+      const TOKEN = "f7f2c827b5fddb8d99c0ae214a909d51";
+      const r = await fetch(`https://${SHOP}/api/2025-07/graphql.json`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Shopify-Storefront-Access-Token": TOKEN },
+        body: JSON.stringify({
+          query: `{ products(first: 30) { edges { node { title vendor productType description priceRange { minVariantPrice { amount currencyCode } } variants(first:3){ edges{ node{ availableForSale } } } } } } }`,
+        }),
+      });
+      if (r.ok) {
+        const j = await r.json();
+        const items = (j?.data?.products?.edges || []).map((e: any) => {
+          const n = e.node;
+          const price = `${n.priceRange.minVariantPrice.amount} ${n.priceRange.minVariantPrice.currencyCode}`;
+          const inStock = n.variants.edges.some((v: any) => v.node.availableForSale);
+          return `- ${n.title} | ${n.vendor} | ${n.productType} | ${price} | ${inStock ? "มีสต็อก" : "หมด"} — ${(n.description || "").slice(0, 120)}`;
+        });
+        if (items.length) catalogContext = items.join("\n");
+      }
+    } catch (e) {
+      console.warn("shopify fetch failed", e);
+    }
+
+    // Pull this customer's purchase history from orders (match by name)
+    let purchaseHistory = "";
+    if (resolvedCustomerName) {
+      const { data: orders } = await admin
+        .from("orders")
+        .select("product_name, amount, channel, created_at")
+        .eq("user_id", ownerId)
+        .ilike("customer_name", resolvedCustomerName)
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (orders && orders.length) {
+        purchaseHistory = orders
+          .map((o: any) => `- ${o.product_name} (${o.amount} บาท, ${o.channel || "-"})`)
+          .join("\n");
+      }
+    }
 
     const systemPrompt = `You are an expert AI Sales & Customer Service agent for ${profile?.company_name || "this online store"}.
-Your goals: greet warmly, answer product questions, recommend products, close sales, handle warranty/returns, and escalate to human when needed.
+Your goals: greet warmly, answer product questions, RECOMMEND products from the live catalog based on the customer's intent and purchase history, close sales, handle warranty/returns, and escalate to human when needed.
 Tone: friendly, helpful, concise. Match the customer's language (Thai or English) automatically.
-Use the merchant's knowledge below as the source of truth. If unsure, say so honestly and offer to connect a human.
 
+LIVE PRODUCT CATALOG (ใช้ข้อมูลนี้ในการแนะนำ — อย่าแต่งราคา/สต็อก):
+${catalogContext || "(no catalog available)"}
+
+${purchaseHistory ? `PURCHASE HISTORY ของลูกค้าคนนี้ (${resolvedCustomerName}) — ใช้แนะนำสินค้าเสริม/อัพเกรด:\n${purchaseHistory}\n` : ""}
 KNOWLEDGE BASE:
 ${trainingContext || "(no training documents yet)"}
 
 Rules:
 - Keep replies under 4 short sentences when possible.
+- เมื่อลูกค้าถามถึงสินค้า ให้แนะนำ 2-3 รายการจาก LIVE PRODUCT CATALOG พร้อมราคา (อย่าแต่งราคาเอง)
+- ถ้ามี PURCHASE HISTORY ให้แนะนำสินค้าเสริม/อัพเกรดที่เข้ากันกับสิ่งที่เคยซื้อ
 - Always end sales-intent replies with a clear next step (e.g. "ต้องการสั่งเลยไหมคะ?").
 - Never invent prices, stock, or order numbers.`;
 

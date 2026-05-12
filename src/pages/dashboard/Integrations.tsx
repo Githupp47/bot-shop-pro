@@ -6,9 +6,10 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Code2, Copy, ExternalLink, Settings } from "lucide-react";
+import { Check, Code2, Copy, ExternalLink, Settings, Eye, EyeOff, Trash2, ShoppingBag } from "lucide-react";
 import { ChannelSetupDialog } from "@/components/ChannelSetupDialog";
 import { Link } from "react-router-dom";
+import { SHOPIFY_STORE_PERMANENT_DOMAIN, SHOPIFY_STOREFRONT_TOKEN } from "@/integrations/shopify/client";
 
 const PROVIDERS = [
   { key: "shopify", name: "Shopify", color: "from-emerald-500/20" },
@@ -24,6 +25,7 @@ export default function Integrations() {
   const { user } = useAuth();
   const [list, setList] = useState<any[]>([]);
   const [setupProvider, setSetupProvider] = useState<"line_oa" | "messenger" | "instagram" | null>(null);
+  const [showToken, setShowToken] = useState(false);
 
   const SETUP_KEYS = new Set(["line_oa", "messenger", "instagram"]);
 
@@ -79,11 +81,18 @@ export default function Integrations() {
                   {connected && <Badge variant="outline" className="border-success/40 text-success"><Check className="h-3 w-3 mr-1" />{t("dash.connected")}</Badge>}
                 </div>
                 {p.key === "shopify" ? (
-                  <Link to="/dashboard/shopify">
-                    <Button variant={connected ? "outline" : "default"} className={`w-full ${!connected ? "bg-gradient-primary" : ""}`}>
-                      จัดการสินค้า →
-                    </Button>
-                  </Link>
+                  <div className="flex gap-2">
+                    <Link to="/dashboard/shopify" className="flex-1">
+                      <Button variant={connected ? "outline" : "default"} className={`w-full ${!connected ? "bg-gradient-primary" : ""}`}>
+                        จัดการสินค้า →
+                      </Button>
+                    </Link>
+                    {connected && (
+                      <Button onClick={() => toggle(p.key, true)} variant="ghost" size="icon" title="ยกเลิกการเชื่อม Shopify">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
                 ) : SETUP_KEYS.has(p.key) ? (
                   <div className="flex gap-2">
                     <Button onClick={() => setSetupProvider(p.key as any)} variant={connected ? "outline" : "default"} className={`flex-1 ${!connected ? "bg-gradient-primary" : ""}`}>
@@ -103,6 +112,46 @@ export default function Integrations() {
           );
         })}
       </div>
+
+      {/* Shopify credentials card */}
+      <Card className="p-6 bg-gradient-card border-border/50">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="h-10 w-10 rounded-lg bg-emerald-500/15 grid place-items-center">
+            <ShoppingBag className="h-5 w-5 text-emerald-400" />
+          </div>
+          <div className="flex-1">
+            <div className="font-display font-semibold text-lg">Shopify Store ของคุณ</div>
+            <div className="text-xs text-muted-foreground">ข้อมูลร้านที่เชื่อมต่อกับระบบ AI</div>
+          </div>
+          <a href={`https://${SHOPIFY_STORE_PERMANENT_DOMAIN}/admin`} target="_blank" rel="noreferrer">
+            <Button size="sm" variant="outline"><ExternalLink className="h-4 w-4" /> Shopify Admin</Button>
+          </a>
+        </div>
+        <div className="grid sm:grid-cols-2 gap-3">
+          <div>
+            <div className="text-xs text-muted-foreground mb-1">Store Domain</div>
+            <div className="flex items-center gap-2 bg-background/60 border border-border/50 rounded-lg p-2 font-mono text-xs">
+              <span className="flex-1 truncate">{SHOPIFY_STORE_PERMANENT_DOMAIN}</span>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => copy(SHOPIFY_STORE_PERMANENT_DOMAIN)}><Copy className="h-3.5 w-3.5" /></Button>
+            </div>
+          </div>
+          <div>
+            <div className="text-xs text-muted-foreground mb-1">Storefront API Token</div>
+            <div className="flex items-center gap-2 bg-background/60 border border-border/50 rounded-lg p-2 font-mono text-xs">
+              <span className="flex-1 truncate">
+                {showToken ? SHOPIFY_STOREFRONT_TOKEN : "•".repeat(28) + SHOPIFY_STOREFRONT_TOKEN.slice(-4)}
+              </span>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setShowToken(!showToken)}>
+                {showToken ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+              </Button>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => copy(SHOPIFY_STOREFRONT_TOKEN)}><Copy className="h-3.5 w-3.5" /></Button>
+            </div>
+          </div>
+        </div>
+        <div className="mt-3 text-xs text-muted-foreground">
+          💡 ร้านนี้เป็น sandbox store (ฟรี) — พิมพ์ <code className="bg-muted px-1 rounded">Claim Store</code> ในแชท Lovable เพื่อรับ trial 30 วันและเข้า Shopify Admin จริง
+        </div>
+      </Card>
 
       {/* Web widget embed */}
       <Card id="widget" className="p-6 bg-gradient-card border-border/50">
