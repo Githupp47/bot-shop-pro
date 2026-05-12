@@ -6,9 +6,10 @@ import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Code2, Copy, ExternalLink, Settings } from "lucide-react";
+import { Check, Code2, Copy, ExternalLink, Settings, Eye, EyeOff, Trash2, ShoppingBag } from "lucide-react";
 import { ChannelSetupDialog } from "@/components/ChannelSetupDialog";
 import { Link } from "react-router-dom";
+import { SHOPIFY_STORE_PERMANENT_DOMAIN, SHOPIFY_STOREFRONT_TOKEN } from "@/integrations/shopify/client";
 
 const PROVIDERS = [
   { key: "shopify", name: "Shopify", color: "from-emerald-500/20" },
