@@ -60,9 +60,12 @@ Deno.serve(async (req) => {
     // Pull profile/company name
     const { data: profile } = await admin.from("profiles").select("full_name, company_name").eq("id", ownerId).maybeSingle();
 
-    // Build conversation history
+    // Build conversation history + resolve customer name from conversation
     let history: { role: string; content: string }[] = [];
+    let resolvedCustomerName = body.customerName;
     if (conversationId) {
+      const { data: conv } = await admin.from("conversations").select("customer_name").eq("id", conversationId).maybeSingle();
+      if (conv?.customer_name && !resolvedCustomerName) resolvedCustomerName = conv.customer_name;
       const { data: prev } = await admin
         .from("messages")
         .select("sender, content")
