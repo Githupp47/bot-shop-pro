@@ -25,6 +25,7 @@ export default function Integrations() {
   const { user } = useAuth();
   const [list, setList] = useState<any[]>([]);
   const [setupProvider, setSetupProvider] = useState<"line_oa" | "messenger" | "instagram" | null>(null);
+  const [showToken, setShowToken] = useState(false);
 
   const SETUP_KEYS = new Set(["line_oa", "messenger", "instagram"]);
 
