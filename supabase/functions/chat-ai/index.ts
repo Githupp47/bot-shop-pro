@@ -135,7 +135,7 @@ Tone: friendly, helpful, concise. Match the customer's language (Thai or English
 LIVE PRODUCT CATALOG (ใช้ข้อมูลนี้ในการแนะนำ — อย่าแต่งราคา/สต็อก):
 ${catalogContext || "(no catalog available)"}
 
-${purchaseHistory ? `PURCHASE HISTORY ของลูกค้าคนนี้ (${body.customerName}) — ใช้แนะนำสินค้าเสริม/อัพเกรด:\n${purchaseHistory}\n` : ""}
+${purchaseHistory ? `PURCHASE HISTORY ของลูกค้าคนนี้ (${resolvedCustomerName}) — ใช้แนะนำสินค้าเสริม/อัพเกรด:\n${purchaseHistory}\n` : ""}
 KNOWLEDGE BASE:
 ${trainingContext || "(no training documents yet)"}
 
