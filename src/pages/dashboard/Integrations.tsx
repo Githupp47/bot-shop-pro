@@ -81,11 +81,18 @@ export default function Integrations() {
                   {connected && <Badge variant="outline" className="border-success/40 text-success"><Check className="h-3 w-3 mr-1" />{t("dash.connected")}</Badge>}
                 </div>
                 {p.key === "shopify" ? (
-                  <Link to="/dashboard/shopify">
-                    <Button variant={connected ? "outline" : "default"} className={`w-full ${!connected ? "bg-gradient-primary" : ""}`}>
-                      จัดการสินค้า →
-                    </Button>
-                  </Link>
+                  <div className="flex gap-2">
+                    <Link to="/dashboard/shopify" className="flex-1">
+                      <Button variant={connected ? "outline" : "default"} className={`w-full ${!connected ? "bg-gradient-primary" : ""}`}>
+                        จัดการสินค้า →
+                      </Button>
+                    </Link>
+                    {connected && (
+                      <Button onClick={() => toggle(p.key, true)} variant="ghost" size="icon" title="ยกเลิกการเชื่อม Shopify">
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
+                  </div>
                 ) : SETUP_KEYS.has(p.key) ? (
                   <div className="flex gap-2">
                     <Button onClick={() => setSetupProvider(p.key as any)} variant={connected ? "outline" : "default"} className={`flex-1 ${!connected ? "bg-gradient-primary" : ""}`}>
