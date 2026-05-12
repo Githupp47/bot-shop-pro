@@ -113,12 +113,12 @@ Deno.serve(async (req) => {
 
     // Pull this customer's purchase history from orders (match by name)
     let purchaseHistory = "";
-    if (body.customerName) {
+    if (resolvedCustomerName) {
       const { data: orders } = await admin
         .from("orders")
         .select("product_name, amount, channel, created_at")
         .eq("user_id", ownerId)
-        .ilike("customer_name", body.customerName)
+        .ilike("customer_name", resolvedCustomerName)
         .order("created_at", { ascending: false })
         .limit(10);
       if (orders && orders.length) {
