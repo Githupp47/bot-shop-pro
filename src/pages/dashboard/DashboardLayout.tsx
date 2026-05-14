@@ -10,8 +10,9 @@ import {
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard, Plug, ToggleRight, GraduationCap, MessagesSquare,
-  BarChart3, CreditCard, Shield, LogOut, Sparkles, Rocket, ShoppingBag,
+  BarChart3, CreditCard, Shield, LogOut, Sparkles, Rocket, ShoppingBag, Package,
 } from "lucide-react";
+import { NotificationsBell } from "@/components/NotificationsBell";
 
 function AppSidebar() {
   const { t } = useTranslation();
@@ -24,6 +25,7 @@ function AppSidebar() {
     { to: "/dashboard", icon: LayoutDashboard, label: t("dash.overview"), end: true },
     { to: "/dashboard/getting-started", icon: Rocket, label: "Getting Started" },
     { to: "/dashboard/integrations", icon: Plug, label: t("dash.integrations") },
+    { to: "/dashboard/products", icon: Package, label: "สินค้าของร้าน" },
     { to: "/dashboard/shopify", icon: ShoppingBag, label: "Shopify" },
     { to: "/dashboard/features", icon: ToggleRight, label: t("dash.features") },
     { to: "/dashboard/training", icon: GraduationCap, label: t("dash.training") },
@@ -99,6 +101,7 @@ export default function DashboardLayout() {
         <div className="flex-1 flex flex-col min-w-0">
           <header className="h-12 flex items-center border-b border-border/40 px-2 sticky top-0 bg-background/80 backdrop-blur z-10">
             <SidebarTrigger />
+            <div className="ml-auto pr-2"><NotificationsBell /></div>
           </header>
           <main className="flex-1 overflow-auto">
             <div className="p-4 md:p-8 max-w-7xl mx-auto w-full">

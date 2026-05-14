@@ -21,6 +21,7 @@ import Billing from "./pages/dashboard/Billing";
 import Admin from "./pages/dashboard/Admin";
 import GettingStarted from "./pages/dashboard/GettingStarted";
 import ShopifyProducts from "./pages/dashboard/ShopifyProducts";
+import Products from "./pages/dashboard/Products";
 import ChatWidget from "./pages/ChatWidget";
 import Docs from "./pages/Docs";
 import NotFound from "./pages/NotFound";
@@ -47,6 +48,7 @@ const App = () => (
               <Route path="getting-started" element={<GettingStarted />} />
               <Route path="integrations" element={<Integrations />} />
               <Route path="shopify" element={<ShopifyProducts />} />
+              <Route path="products" element={<Products />} />
               <Route path="features" element={<BotFeatures />} />
               <Route path="training" element={<Training />} />
               <Route path="livechat" element={<LiveChat />} />
