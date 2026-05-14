@@ -85,30 +85,19 @@ Deno.serve(async (req) => {
       .join("\n\n")
       .slice(0, 6000);
 
-    // Pull live Shopify catalog (best-effort)
+    // Pull store's own products from DB (preferred over Shopify)
     let catalogContext = "";
-    try {
-      const SHOP = "ai-commerce-partner-4o3co.myshopify.com";
-      const TOKEN = "f7f2c827b5fddb8d99c0ae214a909d51";
-      const r = await fetch(`https://${SHOP}/api/2025-07/graphql.json`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Shopify-Storefront-Access-Token": TOKEN },
-        body: JSON.stringify({
-          query: `{ products(first: 30) { edges { node { title vendor productType description priceRange { minVariantPrice { amount currencyCode } } variants(first:3){ edges{ node{ availableForSale } } } } } } }`,
-        }),
-      });
-      if (r.ok) {
-        const j = await r.json();
-        const items = (j?.data?.products?.edges || []).map((e: any) => {
-          const n = e.node;
-          const price = `${n.priceRange.minVariantPrice.amount} ${n.priceRange.minVariantPrice.currencyCode}`;
-          const inStock = n.variants.edges.some((v: any) => v.node.availableForSale);
-          return `- ${n.title} | ${n.vendor} | ${n.productType} | ${price} | ${inStock ? "มีสต็อก" : "หมด"} — ${(n.description || "").slice(0, 120)}`;
-        });
-        if (items.length) catalogContext = items.join("\n");
-      }
-    } catch (e) {
-      console.warn("shopify fetch failed", e);
+    const { data: ownProducts } = await admin
+      .from("products")
+      .select("name, description, price, stock, category, sku")
+      .eq("user_id", ownerId)
+      .eq("status", "active")
+      .gt("stock", 0)
+      .limit(50);
+    if (ownProducts && ownProducts.length) {
+      catalogContext = ownProducts
+        .map((p: any) => `- ${p.name}${p.category ? ` [${p.category}]` : ""} | ฿${p.price} | สต็อก ${p.stock} ชิ้น${p.sku ? ` | SKU:${p.sku}` : ""} — ${(p.description || "").slice(0, 120)}`)
+        .join("\n");
     }
 
     // Pull this customer's purchase history from orders (match by name)
