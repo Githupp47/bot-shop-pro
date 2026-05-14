@@ -143,10 +143,12 @@ Rules:
         sender: "customer",
         content: userMessageContent,
       });
-      await admin
-        .from("conversations")
-        .update({ last_message: userMessageContent, last_message_at: new Date().toISOString() })
-        .eq("id", conversationId);
+      // Detect human-takeover request
+      const lower = userMessageContent.toLowerCase();
+      const wantsHuman = /(คุยกับ(เจ้าหน้าที่|พนักงาน|แอดมิน|คน)|ขอ(เจ้าหน้าที่|แอดมิน|คน)|ติดต่อ(เจ้าหน้าที่|พนักงาน)|talk to (a )?(human|agent|staff|person)|speak to (a )?(human|agent))/i.test(lower);
+      const convUpdate: any = { last_message: userMessageContent, last_message_at: new Date().toISOString() };
+      if (wantsHuman) convUpdate.status = "human_takeover";
+      await admin.from("conversations").update(convUpdate).eq("id", conversationId);
     } else if (body.saveToDb !== false && body.customerName) {
       // Create conversation (widget mode)
       const { data: conv } = await admin
