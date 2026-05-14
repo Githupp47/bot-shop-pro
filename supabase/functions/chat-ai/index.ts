@@ -85,30 +85,19 @@ Deno.serve(async (req) => {
       .join("\n\n")
       .slice(0, 6000);
 
-    // Pull live Shopify catalog (best-effort)
+    // Pull store's own products from DB (preferred over Shopify)
     let catalogContext = "";
-    try {
-      const SHOP = "ai-commerce-partner-4o3co.myshopify.com";
-      const TOKEN = "f7f2c827b5fddb8d99c0ae214a909d51";
-      const r = await fetch(`https://${SHOP}/api/2025-07/graphql.json`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Shopify-Storefront-Access-Token": TOKEN },
-        body: JSON.stringify({
-          query: `{ products(first: 30) { edges { node { title vendor productType description priceRange { minVariantPrice { amount currencyCode } } variants(first:3){ edges{ node{ availableForSale } } } } } } }`,
-        }),
-      });
-      if (r.ok) {
-        const j = await r.json();
-        const items = (j?.data?.products?.edges || []).map((e: any) => {
-          const n = e.node;
-          const price = `${n.priceRange.minVariantPrice.amount} ${n.priceRange.minVariantPrice.currencyCode}`;
-          const inStock = n.variants.edges.some((v: any) => v.node.availableForSale);
-          return `- ${n.title} | ${n.vendor} | ${n.productType} | ${price} | ${inStock ? "มีสต็อก" : "หมด"} — ${(n.description || "").slice(0, 120)}`;
-        });
-        if (items.length) catalogContext = items.join("\n");
-      }
-    } catch (e) {
-      console.warn("shopify fetch failed", e);
+    const { data: ownProducts } = await admin
+      .from("products")
+      .select("name, description, price, stock, category, sku")
+      .eq("user_id", ownerId)
+      .eq("status", "active")
+      .gt("stock", 0)
+      .limit(50);
+    if (ownProducts && ownProducts.length) {
+      catalogContext = ownProducts
+        .map((p: any) => `- ${p.name}${p.category ? ` [${p.category}]` : ""} | ฿${p.price} | สต็อก ${p.stock} ชิ้น${p.sku ? ` | SKU:${p.sku}` : ""} — ${(p.description || "").slice(0, 120)}`)
+        .join("\n");
     }
 
     // Pull this customer's purchase history from orders (match by name)
@@ -154,10 +143,12 @@ Rules:
         sender: "customer",
         content: userMessageContent,
       });
-      await admin
-        .from("conversations")
-        .update({ last_message: userMessageContent, last_message_at: new Date().toISOString() })
-        .eq("id", conversationId);
+      // Detect human-takeover request
+      const lower = userMessageContent.toLowerCase();
+      const wantsHuman = /(คุยกับ(เจ้าหน้าที่|พนักงาน|แอดมิน|คน)|ขอ(เจ้าหน้าที่|แอดมิน|คน)|ติดต่อ(เจ้าหน้าที่|พนักงาน)|talk to (a )?(human|agent|staff|person)|speak to (a )?(human|agent))/i.test(lower);
+      const convUpdate: any = { last_message: userMessageContent, last_message_at: new Date().toISOString() };
+      if (wantsHuman) convUpdate.status = "human_takeover";
+      await admin.from("conversations").update(convUpdate).eq("id", conversationId);
     } else if (body.saveToDb !== false && body.customerName) {
       // Create conversation (widget mode)
       const { data: conv } = await admin

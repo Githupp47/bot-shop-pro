@@ -232,6 +232,42 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          link: string | null
+          message: string | null
+          metadata: Json
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message?: string | null
+          metadata?: Json
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message?: string | null
+          metadata?: Json
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           amount: number
@@ -267,6 +303,57 @@ export type Database = {
           order_number?: string
           product_name?: string
           status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      products: {
+        Row: {
+          category: string | null
+          compare_at_price: number | null
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          low_stock_threshold: number
+          name: string
+          price: number
+          sku: string | null
+          status: string
+          stock: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category?: string | null
+          compare_at_price?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          low_stock_threshold?: number
+          name: string
+          price?: number
+          sku?: string | null
+          status?: string
+          stock?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category?: string | null
+          compare_at_price?: number | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          low_stock_threshold?: number
+          name?: string
+          price?: number
+          sku?: string | null
+          status?: string
+          stock?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
