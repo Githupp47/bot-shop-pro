@@ -133,7 +133,13 @@ Rules:
 - เมื่อลูกค้าถามถึงสินค้า ให้แนะนำ 2-3 รายการจาก LIVE PRODUCT CATALOG พร้อมราคา (อย่าแต่งราคาเอง)
 - ถ้ามี PURCHASE HISTORY ให้แนะนำสินค้าเสริม/อัพเกรดที่เข้ากันกับสิ่งที่เคยซื้อ
 - Always end sales-intent replies with a clear next step (e.g. "ต้องการสั่งเลยไหมคะ?").
-- Never invent prices, stock, or order numbers.`;
+- Never invent prices, stock, or order numbers.
+
+ORDER CONFIRMATION PROTOCOL (สำคัญมาก):
+- เมื่อลูกค้ายืนยันการสั่งซื้อชัดเจน (เช่น "สั่งเลย", "เอาอันนี้", "ยืนยัน", "order it", "I'll take it") ให้ตอบยืนยันสั้นๆ แล้วต่อท้ายด้วย marker นี้ (อย่าให้ลูกค้าเห็น เราจะลบทิ้งก่อนแสดงผล):
+  <<ORDER:ชื่อสินค้าตรงตาม CATALOG|จำนวน>>
+- ตัวอย่าง: "รับทราบค่ะ จัดส่ง iPhone 15 Pro 256GB ให้นะคะ <<ORDER:iPhone 15 Pro 256GB|1>>"
+- ใส่ marker เฉพาะตอนที่ลูกค้ายืนยันแน่นอน ห้ามใส่ตอนแค่ถามข้อมูล`;
 
     // Save customer message if we have a conversation
     if (conversationId) {
@@ -198,7 +204,39 @@ Rules:
     }
 
     const aiJson = await aiRes.json();
-    const reply: string = aiJson.choices?.[0]?.message?.content?.trim() || "ขออภัยค่ะ ดิฉันไม่สามารถตอบคำถามนี้ได้ในขณะนี้";
+    const rawReply: string = aiJson.choices?.[0]?.message?.content?.trim() || "ขออภัยค่ะ ดิฉันไม่สามารถตอบคำถามนี้ได้ในขณะนี้";
+
+    // Parse <<ORDER:name|qty>> markers → decrement stock + create order
+    let reply = rawReply;
+    const orderRegex = /<<ORDER:([^|>]+)\|(\d+)>>/g;
+    const orderMatches = [...rawReply.matchAll(orderRegex)];
+    if (orderMatches.length) {
+      reply = rawReply.replace(orderRegex, "").trim();
+      for (const m of orderMatches) {
+        const productName = m[1].trim();
+        const qty = parseInt(m[2], 10) || 1;
+        const { data: prod } = await admin
+          .from("products")
+          .select("id, name, price, stock")
+          .eq("user_id", ownerId)
+          .ilike("name", productName)
+          .maybeSingle();
+        if (prod && prod.stock >= qty) {
+          await admin.from("products").update({ stock: prod.stock - qty }).eq("id", prod.id);
+          await admin.from("orders").insert({
+            user_id: ownerId,
+            order_number: "#A-" + Math.floor(10000 + Math.random() * 90000),
+            customer_name: resolvedCustomerName || body.customerName || "Customer",
+            product_name: prod.name,
+            amount: Number(prod.price) * qty,
+            closed_by_ai: true,
+            channel: (body.channel as any) || "web_widget",
+          });
+        } else if (prod) {
+          reply += `\n\n(แจ้ง: สต็อก ${prod.name} ไม่พอค่ะ เหลือ ${prod.stock} ชิ้น)`;
+        }
+      }
+    }
 
     // Save AI reply
     if (conversationId) {
