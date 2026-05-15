@@ -16,8 +16,12 @@ import { SiteFooter } from "@/components/SiteFooter";
 
 const fadeUp = { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: "-80px" }, transition: { duration: 0.6, ease: "easeOut" as const } };
 
+import { useState } from "react";
+import { DemoChatDialog } from "@/components/DemoChatDialog";
+
 const Landing = () => {
   const { t } = useTranslation();
+  const [demoOpen, setDemoOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
@@ -50,7 +54,7 @@ const Landing = () => {
                   <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </Link>
-              <Button size="lg" variant="outline" className="h-12 px-8 glass border-border/60">
+              <Button size="lg" variant="outline" className="h-12 px-8 glass border-border/60" onClick={() => setDemoOpen(true)}>
                 <Play className="mr-2 h-4 w-4" /> {t("hero.ctaSecondary")}
               </Button>
             </div>
@@ -286,6 +290,7 @@ const Landing = () => {
       </section>
 
       <SiteFooter />
+      <DemoChatDialog open={demoOpen} onOpenChange={setDemoOpen} />
     </div>
   );
 };
