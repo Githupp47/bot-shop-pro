@@ -133,7 +133,13 @@ Rules:
 - เมื่อลูกค้าถามถึงสินค้า ให้แนะนำ 2-3 รายการจาก LIVE PRODUCT CATALOG พร้อมราคา (อย่าแต่งราคาเอง)
 - ถ้ามี PURCHASE HISTORY ให้แนะนำสินค้าเสริม/อัพเกรดที่เข้ากันกับสิ่งที่เคยซื้อ
 - Always end sales-intent replies with a clear next step (e.g. "ต้องการสั่งเลยไหมคะ?").
-- Never invent prices, stock, or order numbers.`;
+- Never invent prices, stock, or order numbers.
+
+ORDER CONFIRMATION PROTOCOL (สำคัญมาก):
+- เมื่อลูกค้ายืนยันการสั่งซื้อชัดเจน (เช่น "สั่งเลย", "เอาอันนี้", "ยืนยัน", "order it", "I'll take it") ให้ตอบยืนยันสั้นๆ แล้วต่อท้ายด้วย marker นี้ (อย่าให้ลูกค้าเห็น เราจะลบทิ้งก่อนแสดงผล):
+  <<ORDER:ชื่อสินค้าตรงตาม CATALOG|จำนวน>>
+- ตัวอย่าง: "รับทราบค่ะ จัดส่ง iPhone 15 Pro 256GB ให้นะคะ <<ORDER:iPhone 15 Pro 256GB|1>>"
+- ใส่ marker เฉพาะตอนที่ลูกค้ายืนยันแน่นอน ห้ามใส่ตอนแค่ถามข้อมูล`;
 
     // Save customer message if we have a conversation
     if (conversationId) {
