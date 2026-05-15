@@ -35,6 +35,19 @@ export function NotificationsBell() {
     setItems((data as Notif[]) || []);
   };
 
+  const playBeep = () => {
+    try {
+      const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const o = ctx.createOscillator();
+      const g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = "sine"; o.frequency.value = 880;
+      g.gain.setValueAtTime(0.15, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+      o.start(); o.stop(ctx.currentTime + 0.4);
+    } catch {}
+  };
+
   useEffect(() => {
     if (!user) return;
     load();
@@ -43,7 +56,16 @@ export function NotificationsBell() {
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` }, (p) => {
         const n = p.new as Notif;
         setItems((prev) => [n, ...prev].slice(0, 30));
-        toast.info(n.title, { description: n.message || undefined });
+        playBeep();
+        if (n.type === "human_takeover") {
+          toast.warning(`🙋 ${n.title}`, {
+            description: n.message || undefined,
+            duration: 10000,
+            action: n.link ? { label: "เปิดแชท", onClick: () => nav(n.link!) } : undefined,
+          });
+        } else {
+          toast.info(n.title, { description: n.message || undefined });
+        }
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
