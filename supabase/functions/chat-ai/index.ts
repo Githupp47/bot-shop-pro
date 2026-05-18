@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
       history = body.history.map((h) => ({ role: h.role, content: h.content }));
     }
 
+<<<<<<< HEAD
     const trainingContext = (docs || [])
       .map((d: any) => `### ${d.title} (${d.doc_type})\n${d.content || "(no inline content)"}`)
       .join("\n\n")
@@ -98,6 +99,25 @@ Deno.serve(async (req) => {
       catalogContext = ownProducts
         .map((p: any) => `- ${p.name}${p.category ? ` [${p.category}]` : ""} | ฿${p.price} | สต็อก ${p.stock} ชิ้น${p.sku ? ` | SKU:${p.sku}` : ""} — ${(p.description || "").slice(0, 120)}`)
         .join("\n");
+=======
+    // Pull live Demo Stock catalog (Real-time from Database)
+    let catalogContext = "";
+    try {
+      const { data: demoItems } = await admin
+        .from("demo_stock")
+        .select("name, price, quantity")
+        .eq("user_id", ownerId);
+      
+      if (demoItems && demoItems.length > 0) {
+        const items = demoItems.map((item: any) => {
+          const stockStatus = item.quantity > 0 ? `${item.quantity} ชิ้น` : "หมด";
+          return `- ${item.name} | ฿${item.price.toLocaleString()} | สต็อก: ${stockStatus}`;
+        });
+        catalogContext = items.join("\n");
+      }
+    } catch (e) {
+      console.warn("demo stock fetch failed", e);
+>>>>>>> 3f46dcb (tor system promt)
     }
 
     // Pull this customer's purchase history from orders (match by name)
@@ -117,17 +137,25 @@ Deno.serve(async (req) => {
       }
     }
 
+<<<<<<< HEAD
     const systemPrompt = `You are an expert AI Sales & Customer Service agent for ${profile?.company_name || "this online store"}.
 Your goals: greet warmly, answer product questions, RECOMMEND products from the live catalog based on the customer's intent and purchase history, close sales, handle warranty/returns, and escalate to human when needed.
 Tone: friendly, helpful, concise. Match the customer's language (Thai or English) automatically.
+=======
+    const systemPrompt = `### ROLE & PERSONA
+You are the Official AI Sales & Brand Ambassador for ${profile?.company_name || "this store"}.
+Your personality: Professional, energetic, highly helpful, and focused on providing a premium shopping experience.
+Your goal: Guide customers through their journey—from discovery to checkout—with accuracy and charm.
+>>>>>>> 3f46dcb (tor system promt)
 
-LIVE PRODUCT CATALOG (ใช้ข้อมูลนี้ในการแนะนำ — อย่าแต่งราคา/สต็อก):
-${catalogContext || "(no catalog available)"}
+### CONTEXTUAL DATA
+**LIVE PRODUCT CATALOG (Real-time):**
+${catalogContext || "(No catalog available. Do not mention this to the customer.)"}
 
-${purchaseHistory ? `PURCHASE HISTORY ของลูกค้าคนนี้ (${resolvedCustomerName}) — ใช้แนะนำสินค้าเสริม/อัพเกรด:\n${purchaseHistory}\n` : ""}
-KNOWLEDGE BASE:
-${trainingContext || "(no training documents yet)"}
+**CUSTOMER PROFILE & PURCHASE HISTORY:**
+${purchaseHistory ? `Customer: ${resolvedCustomerName}\nPast Orders:\n${purchaseHistory}` : "New Customer (No prior history found.)"}
 
+<<<<<<< HEAD
 Rules:
 - Keep replies under 4 short sentences when possible.
 - เมื่อลูกค้าถามถึงสินค้า ให้แนะนำ 2-3 รายการจาก LIVE PRODUCT CATALOG พร้อมราคา (อย่าแต่งราคาเอง)
@@ -140,6 +168,31 @@ ORDER CONFIRMATION PROTOCOL (สำคัญมาก):
   <<ORDER:ชื่อสินค้าตรงตาม CATALOG|จำนวน>>
 - ตัวอย่าง: "รับทราบค่ะ จัดส่ง iPhone 15 Pro 256GB ให้นะคะ <<ORDER:iPhone 15 Pro 256GB|1>>"
 - ใส่ marker เฉพาะตอนที่ลูกค้ายืนยันแน่นอน ห้ามใส่ตอนแค่ถามข้อมูล`;
+=======
+**KNOWLEDGE BASE (Internal Notes):**
+${trainingContext || "(No additional notes provided.)"}
+
+### RESPONSE STRATEGY
+1. **Understand Intent:** Identify if the customer is browsing, asking a specific question, or ready to buy.
+2. **Consult Knowledge Base:** Use ONLY provided data. If the answer isn't in the Catalog or Knowledge Base, politely say you don't have that specific information and offer to escalate to a human.
+3. **Handle Objections:** If a customer mentions price or doubt, focus on value, quality, and service. Never drop the price without a promo rule, but emphasize the benefits.
+4. **Smart Recommendations & Upselling:** When suggesting products, explain *why* it fits their needs. If they are interested in an item, suggest a complementary product from the catalog (Upsell/Cross-sell).
+5. **Close the Loop:** Always end with a proactive next step (e.g., "Would you like to see the sizing chart?", "Shall I send a checkout link for this?").
+
+### STRICT RULES & CONSTRAINTS
+- **Zero Hallucination:** NEVER invent prices, stock levels, or features. 
+- **Conciseness:** Keep responses under 3-4 short paragraphs. Use bullet points for readability.
+- **Formatting:** Use **bold** for prices and product names. Use Markdown headers for structure if needed.
+- Formatting: Use **bold** for prices and product names. Use Markdown headers for structure if needed.
+- Tone: Professional, energetic, and helpful.
+- Language: ALWAYS detect the customer's language and respond in that same language (e.g., if they ask in Thai, reply in Thai; if English, reply in English; if Chinese, reply in Chinese; if Japanese, reply in Japanese).
+
+### CUSTOMER-SPECIFIC INSTRUCTIONS (OVERRIDING PRIORITY)
+The following specific instructions from the store owner take absolute precedence:
+${userInstructions || "Maintain a friendly and helpful tone. Detect and match the customer's language automatically."}
+
+(Note: Your general knowledge and brand ambassador persona remain consistent across all languages.)`
+>>>>>>> 3f46dcb (tor system promt)
 
     // Save customer message if we have a conversation
     if (conversationId) {
@@ -186,7 +239,7 @@ ORDER CONFIRMATION PROTOCOL (สำคัญมาก):
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
+        model: "google/gemini-1.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
           ...history,
