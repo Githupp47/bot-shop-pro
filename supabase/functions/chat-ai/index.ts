@@ -1,320 +1,104 @@
-// AI chat edge function - generates AI replies using Lovable AI Gateway
-// Uses training documents + bot features as context, saves to messages table.
+// AI chat edge function - HARD-CODED TRANSLATION GUARD
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
-
-interface ReqBody {
-  conversationId?: string;
-  customerName?: string;
-  channel?: string;
-  message: string;
-  ownerId?: string; // for public widget mode
-  history?: { role: "user" | "assistant"; content: string }[];
-  saveToDb?: boolean; // default true if conversationId set
-}
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const body = (await req.json()) as ReqBody;
-    if (!body?.message?.trim()) {
-      return json({ error: "message required" }, 400);
-    }
+    const body = await req.json();
+    const userMessage = body.message;
+    if (!userMessage?.trim()) return json({ error: "message required" }, 400);
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) return json({ error: "LOVABLE_API_KEY missing" }, 500);
+    const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const admin = createClient(SUPABASE_URL, SERVICE_ROLE);
-
-    // Resolve owner: either authenticated user or explicit ownerId (widget mode)
+    // Resolve owner
     let ownerId = body.ownerId;
-    let conversationId = body.conversationId;
-    let userMessageContent = body.message;
-
     const authHeader = req.headers.get("Authorization");
     if (!ownerId && authHeader?.startsWith("Bearer ")) {
-      const token = authHeader.replace("Bearer ", "");
-      const userClient = createClient(SUPABASE_URL, Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY")!, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data } = await userClient.auth.getUser(token);
+      const { data } = await admin.auth.getUser(authHeader.replace("Bearer ", ""));
       if (data?.user) ownerId = data.user.id;
     }
     if (!ownerId) return json({ error: "owner not resolved" }, 401);
 
-    // Pull training documents (limit to small context)
-    const { data: docs } = await admin
-      .from("training_documents")
-      .select("title, doc_type, content")
-      .eq("user_id", ownerId)
-      .limit(20);
+    // Pull store data
+    const [{ data: profile }, { data: products }] = await Promise.all([
+      admin.from("profiles").select("company_name").eq("id", ownerId).maybeSingle(),
+      admin.from("products").select("name, price").eq("user_id", ownerId).eq("status", "active").limit(10)
+    ]);
 
-    // Pull profile/company name
-    const { data: profile } = await admin.from("profiles").select("full_name, company_name").eq("id", ownerId).maybeSingle();
+    // DETECTION: What is the input language?
+    const isThai = /[ก-ฮ]/.test(userMessage);
+    const targetLang = isThai ? "Thai" : "the SAME language as the user input";
 
-    // Build conversation history + resolve customer name from conversation
-    let history: { role: string; content: string }[] = [];
-    let resolvedCustomerName = body.customerName;
-    if (conversationId) {
-      const { data: conv } = await admin.from("conversations").select("customer_name").eq("id", conversationId).maybeSingle();
-      if (conv?.customer_name && !resolvedCustomerName) resolvedCustomerName = conv.customer_name;
-      const { data: prev } = await admin
-        .from("messages")
-        .select("sender, content")
-        .eq("conversation_id", conversationId)
-        .order("created_at", { ascending: true })
-        .limit(30);
-      history = (prev || []).map((m: any) => ({
-        role: m.sender === "customer" ? "user" : "assistant",
-        content: m.content,
-      }));
-    } else if (body.history) {
-      history = body.history.map((h) => ({ role: h.role, content: h.content }));
-    }
+    const systemPrompt = `
+[ROLE]
+You are a sales assistant for "${profile?.company_name || "this store"}".
+[MANDATORY]
+Respond ONLY in ${targetLang}. 
+If target is NOT Thai, translate all product info below.
+[DATA]
+${products?.map(p => `- ${p.name}: ฿${p.price}`).join("\n") || "No catalog."}
+`;
 
-<<<<<<< HEAD
-    const trainingContext = (docs || [])
-      .map((d: any) => `### ${d.title} (${d.doc_type})\n${d.content || "(no inline content)"}`)
-      .join("\n\n")
-      .slice(0, 6000);
-
-    // Pull store's own products from DB (preferred over Shopify)
-    let catalogContext = "";
-    const { data: ownProducts } = await admin
-      .from("products")
-      .select("name, description, price, stock, category, sku")
-      .eq("user_id", ownerId)
-      .eq("status", "active")
-      .gt("stock", 0)
-      .limit(50);
-    if (ownProducts && ownProducts.length) {
-      catalogContext = ownProducts
-        .map((p: any) => `- ${p.name}${p.category ? ` [${p.category}]` : ""} | ฿${p.price} | สต็อก ${p.stock} ชิ้น${p.sku ? ` | SKU:${p.sku}` : ""} — ${(p.description || "").slice(0, 120)}`)
-        .join("\n");
-=======
-    // Pull live Demo Stock catalog (Real-time from Database)
-    let catalogContext = "";
-    try {
-      const { data: demoItems } = await admin
-        .from("demo_stock")
-        .select("name, price, quantity")
-        .eq("user_id", ownerId);
-      
-      if (demoItems && demoItems.length > 0) {
-        const items = demoItems.map((item: any) => {
-          const stockStatus = item.quantity > 0 ? `${item.quantity} ชิ้น` : "หมด";
-          return `- ${item.name} | ฿${item.price.toLocaleString()} | สต็อก: ${stockStatus}`;
-        });
-        catalogContext = items.join("\n");
-      }
-    } catch (e) {
-      console.warn("demo stock fetch failed", e);
->>>>>>> 3f46dcb (tor system promt)
-    }
-
-    // Pull this customer's purchase history from orders (match by name)
-    let purchaseHistory = "";
-    if (resolvedCustomerName) {
-      const { data: orders } = await admin
-        .from("orders")
-        .select("product_name, amount, channel, created_at")
-        .eq("user_id", ownerId)
-        .ilike("customer_name", resolvedCustomerName)
-        .order("created_at", { ascending: false })
-        .limit(10);
-      if (orders && orders.length) {
-        purchaseHistory = orders
-          .map((o: any) => `- ${o.product_name} (${o.amount} บาท, ${o.channel || "-"})`)
-          .join("\n");
-      }
-    }
-
-<<<<<<< HEAD
-    const systemPrompt = `You are an expert AI Sales & Customer Service agent for ${profile?.company_name || "this online store"}.
-Your goals: greet warmly, answer product questions, RECOMMEND products from the live catalog based on the customer's intent and purchase history, close sales, handle warranty/returns, and escalate to human when needed.
-Tone: friendly, helpful, concise. Match the customer's language (Thai or English) automatically.
-=======
-    const systemPrompt = `### ROLE & PERSONA
-You are the Official AI Sales & Brand Ambassador for ${profile?.company_name || "this store"}.
-Your personality: Professional, energetic, highly helpful, and focused on providing a premium shopping experience.
-Your goal: Guide customers through their journey—from discovery to checkout—with accuracy and charm.
->>>>>>> 3f46dcb (tor system promt)
-
-### CONTEXTUAL DATA
-**LIVE PRODUCT CATALOG (Real-time):**
-${catalogContext || "(No catalog available. Do not mention this to the customer.)"}
-
-**CUSTOMER PROFILE & PURCHASE HISTORY:**
-${purchaseHistory ? `Customer: ${resolvedCustomerName}\nPast Orders:\n${purchaseHistory}` : "New Customer (No prior history found.)"}
-
-<<<<<<< HEAD
-Rules:
-- Keep replies under 4 short sentences when possible.
-- เมื่อลูกค้าถามถึงสินค้า ให้แนะนำ 2-3 รายการจาก LIVE PRODUCT CATALOG พร้อมราคา (อย่าแต่งราคาเอง)
-- ถ้ามี PURCHASE HISTORY ให้แนะนำสินค้าเสริม/อัพเกรดที่เข้ากันกับสิ่งที่เคยซื้อ
-- Always end sales-intent replies with a clear next step (e.g. "ต้องการสั่งเลยไหมคะ?").
-- Never invent prices, stock, or order numbers.
-
-ORDER CONFIRMATION PROTOCOL (สำคัญมาก):
-- เมื่อลูกค้ายืนยันการสั่งซื้อชัดเจน (เช่น "สั่งเลย", "เอาอันนี้", "ยืนยัน", "order it", "I'll take it") ให้ตอบยืนยันสั้นๆ แล้วต่อท้ายด้วย marker นี้ (อย่าให้ลูกค้าเห็น เราจะลบทิ้งก่อนแสดงผล):
-  <<ORDER:ชื่อสินค้าตรงตาม CATALOG|จำนวน>>
-- ตัวอย่าง: "รับทราบค่ะ จัดส่ง iPhone 15 Pro 256GB ให้นะคะ <<ORDER:iPhone 15 Pro 256GB|1>>"
-- ใส่ marker เฉพาะตอนที่ลูกค้ายืนยันแน่นอน ห้ามใส่ตอนแค่ถามข้อมูล`;
-=======
-**KNOWLEDGE BASE (Internal Notes):**
-${trainingContext || "(No additional notes provided.)"}
-
-### RESPONSE STRATEGY
-1. **Understand Intent:** Identify if the customer is browsing, asking a specific question, or ready to buy.
-2. **Consult Knowledge Base:** Use ONLY provided data. If the answer isn't in the Catalog or Knowledge Base, politely say you don't have that specific information and offer to escalate to a human.
-3. **Handle Objections:** If a customer mentions price or doubt, focus on value, quality, and service. Never drop the price without a promo rule, but emphasize the benefits.
-4. **Smart Recommendations & Upselling:** When suggesting products, explain *why* it fits their needs. If they are interested in an item, suggest a complementary product from the catalog (Upsell/Cross-sell).
-5. **Close the Loop:** Always end with a proactive next step (e.g., "Would you like to see the sizing chart?", "Shall I send a checkout link for this?").
-
-### STRICT RULES & CONSTRAINTS
-- **Zero Hallucination:** NEVER invent prices, stock levels, or features. 
-- **Conciseness:** Keep responses under 3-4 short paragraphs. Use bullet points for readability.
-- **Formatting:** Use **bold** for prices and product names. Use Markdown headers for structure if needed.
-- Formatting: Use **bold** for prices and product names. Use Markdown headers for structure if needed.
-- Tone: Professional, energetic, and helpful.
-- Language: ALWAYS detect the customer's language and respond in that same language (e.g., if they ask in Thai, reply in Thai; if English, reply in English; if Chinese, reply in Chinese; if Japanese, reply in Japanese).
-
-### CUSTOMER-SPECIFIC INSTRUCTIONS (OVERRIDING PRIORITY)
-The following specific instructions from the store owner take absolute precedence:
-${userInstructions || "Maintain a friendly and helpful tone. Detect and match the customer's language automatically."}
-
-(Note: Your general knowledge and brand ambassador persona remain consistent across all languages.)`
->>>>>>> 3f46dcb (tor system promt)
-
-    // Save customer message if we have a conversation
-    if (conversationId) {
-      await admin.from("messages").insert({
-        conversation_id: conversationId,
-        user_id: ownerId,
-        sender: "customer",
-        content: userMessageContent,
-      });
-      // Detect human-takeover request
-      const lower = userMessageContent.toLowerCase();
-      const wantsHuman = /(คุยกับ(เจ้าหน้าที่|พนักงาน|แอดมิน|คน)|ขอ(เจ้าหน้าที่|แอดมิน|คน)|ติดต่อ(เจ้าหน้าที่|พนักงาน)|talk to (a )?(human|agent|staff|person)|speak to (a )?(human|agent))/i.test(lower);
-      const convUpdate: any = { last_message: userMessageContent, last_message_at: new Date().toISOString() };
-      if (wantsHuman) convUpdate.status = "human_takeover";
-      await admin.from("conversations").update(convUpdate).eq("id", conversationId);
-    } else if (body.saveToDb !== false && body.customerName) {
-      // Create conversation (widget mode)
-      const { data: conv } = await admin
-        .from("conversations")
-        .insert({
-          user_id: ownerId,
-          customer_name: body.customerName,
-          channel: (body.channel as any) || "web_widget",
-          last_message: userMessageContent,
-        })
-        .select()
-        .single();
-      if (conv) {
-        conversationId = conv.id;
-        await admin.from("messages").insert({
-          conversation_id: conv.id,
-          user_id: ownerId,
-          sender: "customer",
-          content: userMessageContent,
-        });
-      }
-    }
-
-    // Call Lovable AI
+    // CALL 1: Generate Response
     const aiRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-1.5-flash",
+      headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ 
+        model: "google/gemini-1.5-flash", 
         messages: [
           { role: "system", content: systemPrompt },
-          ...history,
-          { role: "user", content: userMessageContent },
+          ...(body.history || []),
+          { role: "user", content: `(Instruction: Use ONLY ${targetLang}): ${userMessage}` }
         ],
+        temperature: 0
       }),
     });
 
-    if (!aiRes.ok) {
-      const errText = await aiRes.text();
-      console.error("AI gateway error", aiRes.status, errText);
-      if (aiRes.status === 429) return json({ error: "Rate limit exceeded, please try again." }, 429);
-      if (aiRes.status === 402) return json({ error: "AI credits exhausted. Please add funds in workspace settings." }, 402);
-      return json({ error: "AI gateway error" }, 500);
-    }
-
     const aiJson = await aiRes.json();
-    const rawReply: string = aiJson.choices?.[0]?.message?.content?.trim() || "ขออภัยค่ะ ดิฉันไม่สามารถตอบคำถามนี้ได้ในขณะนี้";
+    let rawReply = aiJson.choices?.[0]?.message?.content?.trim() || "";
 
-    // Parse <<ORDER:name|qty>> markers → decrement stock + create order
-    let reply = rawReply;
-    const orderRegex = /<<ORDER:([^|>]+)\|(\d+)>>/g;
-    const orderMatches = [...rawReply.matchAll(orderRegex)];
-    if (orderMatches.length) {
-      reply = rawReply.replace(orderRegex, "").trim();
-      for (const m of orderMatches) {
-        const productName = m[1].trim();
-        const qty = parseInt(m[2], 10) || 1;
-        const { data: prod } = await admin
-          .from("products")
-          .select("id, name, price, stock")
-          .eq("user_id", ownerId)
-          .ilike("name", productName)
-          .maybeSingle();
-        if (prod && prod.stock >= qty) {
-          await admin.from("products").update({ stock: prod.stock - qty }).eq("id", prod.id);
-          await admin.from("orders").insert({
-            user_id: ownerId,
-            order_number: "#A-" + Math.floor(10000 + Math.random() * 90000),
-            customer_name: resolvedCustomerName || body.customerName || "Customer",
-            product_name: prod.name,
-            amount: Number(prod.price) * qty,
-            closed_by_ai: true,
-            channel: (body.channel as any) || "web_widget",
-          });
-        } else if (prod) {
-          reply += `\n\n(แจ้ง: สต็อก ${prod.name} ไม่พอค่ะ เหลือ ${prod.stock} ชิ้น)`;
-        }
-      }
-    }
-
-    // Save AI reply
-    if (conversationId) {
-      await admin.from("messages").insert({
-        conversation_id: conversationId,
-        user_id: ownerId,
-        sender: "ai",
-        content: reply,
+    // CALL 2: THE TRANSLATION GUARD (If input is not Thai, we FORCE translation again)
+    if (!isThai) {
+      const transRes = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${LOVABLE_API_KEY}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          model: "google/gemini-1.5-flash", 
+          messages: [
+            { role: "system", content: `You are a translator. Translate the following text into the same language as this input: "${userMessage}". Output ONLY the translation.` },
+            { role: "user", content: rawReply }
+          ],
+          temperature: 0
+        }),
       });
-      await admin
-        .from("conversations")
-        .update({ last_message: reply, last_message_at: new Date().toISOString() })
-        .eq("id", conversationId);
+      const transJson = await transRes.json();
+      rawReply = transJson.choices?.[0]?.message?.content?.trim() || rawReply;
     }
 
-    return json({ reply, conversationId });
+    const finalReply = rawReply;
+
+    // Save history
+    if (body.conversationId) {
+      await admin.from("messages").insert([
+        { conversation_id: body.conversationId, user_id: ownerId, sender: "customer", content: userMessage },
+        { conversation_id: body.conversationId, user_id: ownerId, sender: "ai", content: finalReply }
+      ]);
+      await admin.from("conversations").update({ last_message: finalReply, last_message_at: new Date().toISOString() }).eq("id", body.conversationId);
+    }
+
+    return json({ reply: finalReply, conversationId: body.conversationId });
   } catch (e) {
-    console.error("chat-ai error", e);
-    return json({ error: e instanceof Error ? e.message : "Unknown error" }, 500);
+    return json({ error: "error" }, 500);
   }
 });
 
-function json(data: unknown, status = 200) {
-  return new Response(JSON.stringify(data), {
-    status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+function json(data: any, status = 200) {
+  return new Response(JSON.stringify(data), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 }
